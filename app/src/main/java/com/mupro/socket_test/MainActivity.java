@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         WifiManager manager = (WifiManager) this
                 .getSystemService(Context.WIFI_SERVICE);
         udphelper = new UdpHelper(manager);
-
+        //Test
         //传递WifiManager对象，以便在UDPHelper类里面使用MulticastLock
         //udphelper.addObserver(MsgReceiveService.this);
         tReceived = new Thread(udphelper);
