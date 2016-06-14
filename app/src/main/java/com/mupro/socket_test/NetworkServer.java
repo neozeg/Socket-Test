@@ -34,6 +34,7 @@ public class NetworkServer{
             new UDPThread().start();
             ServerSocket serverSocket = null;
 
+
             try {
                 serverSocket = new ServerSocket(TCP_PORT);
             } catch (IOException e) {
