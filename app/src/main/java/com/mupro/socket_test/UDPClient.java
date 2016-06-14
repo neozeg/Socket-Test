@@ -12,7 +12,8 @@ import java.net.UnknownHostException;
  */
 public class UDPClient {
 
-    private static final int SERVER_PORT = 6000;
+    private static final int SERVER_PORT = 6666;
+    private static final String SERVER_IP = "192.168.191.1";
 
     private DatagramSocket dSocket = null;
 
@@ -31,9 +32,10 @@ public class UDPClient {
      */
     public String send() {
         StringBuilder sb = new StringBuilder();
-        InetAddress local = null;
+        InetAddress IP = null;
         try {
-            local = InetAddress.getByName("localhost"); // 本机测试
+            //local = InetAddress.getByName("localhost"); // 本机测试
+            IP = InetAddress.getByName(SERVER_IP);
             sb.append("已找到服务器,连接中...").append("/n");
         } catch (UnknownHostException e) {
             sb.append("未找到服务器.").append("/n");
@@ -48,7 +50,7 @@ public class UDPClient {
         }
         int msg_len = msg == null ? 0 : msg.length();
         DatagramPacket dPacket = new DatagramPacket(msg.getBytes(), msg_len,
-                local, SERVER_PORT);
+                IP, SERVER_PORT);
         try {
             dSocket.send(dPacket);
             sb.append("消息发送成功!").append("/n");
