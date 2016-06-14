@@ -24,7 +24,7 @@ public class UdpHelper implements Runnable{
     }
     public void StartListen()  {
         // UDP服务器监听的端口
-        Integer port = 6667;
+        Integer port = 6666;
         // 接收的字节大小，客户端发送的数据不能超过这个大小
         byte[] message = new byte[100];
         try {
