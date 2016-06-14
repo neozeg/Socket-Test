@@ -9,8 +9,11 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class MainActivity extends AppCompatActivity {
-    private NetworkServer Server;
+    private UDPServer Server;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,8 +29,9 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-        Server = new NetworkServer();
-        Server.main(null);
+        Server = new UDPServer();
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        executorService.execute(Server);
     }
 
     @Override
