@@ -1,12 +1,16 @@
 package com.mupro.socket_test;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,6 +22,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
+    private final static String TAG = "MainActivity";
+
     private UDPServer Server;
     private UdpHelper udphelper;
 
@@ -32,12 +38,17 @@ public class MainActivity extends AppCompatActivity {
         //用于创建线程
         WifiManager manager = (WifiManager) this
                 .getSystemService(Context.WIFI_SERVICE);
-        udphelper = new UdpHelper(manager);
-        //Test
+        udphelper = new UdpHelper(manager,getApplicationContext());
+        //udphelper = new UdpHelper(manager);
         //传递WifiManager对象，以便在UDPHelper类里面使用MulticastLock
         //udphelper.addObserver(MsgReceiveService.this);
-        tReceived = new Thread(udphelper);
-        tReceived.start();
+        //tReceived = new Thread(udphelper);
+        //tReceived.start();
+
+        ExecutorService exec = Executors.newCachedThreadPool();
+        exec.execute(udphelper);
+
+        registerReceivers();
 
         mTvRec = (TextView) findViewById(R.id.textViewMsgRec);
         mEtSend = (EditText) findViewById(R.id.editTextMsgSend);
@@ -45,10 +56,25 @@ public class MainActivity extends AppCompatActivity {
         mBtnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                udphelper.send("test");
+                /**/
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        udphelper.send(mEtSend.getText().toString());
+                        //udphelper.send(" ");
+                    }
+                }).start();
+
+                //udphelper.send(mEtSend.getText().toString());
             }
         });
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceivers();
     }
 
     @Override
@@ -71,5 +97,32 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void registerReceivers(){
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UdpHelper.ACTION_UDP_MSG_RECEIVE);
+        registerReceiver(mUDPReceiver,filter);
+    }
+
+    private void unregisterReceivers(){
+        unregisterReceiver(mUDPReceiver);
+    }
+
+    private BroadcastReceiver mUDPReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if(action.equals(UdpHelper.ACTION_UDP_MSG_RECEIVE)){
+                processUdpMsg(intent);
+            }
+        }
+    };
+
+    private void processUdpMsg(Intent intent){
+        Log.i(TAG,intent.getAction());
+        String str = new String(intent.getByteArrayExtra(UdpHelper.EXTRA_UDP_MSG_RECEIVE));
+        str = str.trim();
+        mTvRec.setText(str.toString());
     }
 }
