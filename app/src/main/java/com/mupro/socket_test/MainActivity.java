@@ -16,8 +16,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,6 +34,11 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTvRec;
     private EditText mEtSend;
     private Button mBtnSend;
+    private ListView mLvChat;
+
+    private List<ChatMsgEntity> mDataArrays = new ArrayList<ChatMsgEntity>();
+    private ChatMsgViewAdapter mChatMsgViewAdapter;
+
     private Thread tReceived;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,25 +58,7 @@ public class MainActivity extends AppCompatActivity {
         exec.execute(udphelper);
 
         registerReceivers();
-
-        mTvRec = (TextView) findViewById(R.id.textViewMsgRec);
-        mEtSend = (EditText) findViewById(R.id.editTextMsgSend);
-        mBtnSend = (Button) findViewById(R.id.buttonSend);
-        mBtnSend.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                /**/
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        udphelper.send(mEtSend.getText().toString());
-                        //udphelper.send(" ");
-                    }
-                }).start();
-
-                //udphelper.send(mEtSend.getText().toString());
-            }
-        });
+        setupViewComponents();
 
     }
 
@@ -99,6 +90,39 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void setupViewComponents(){
+
+        mLvChat = (ListView) findViewById(R.id.listViewChat);
+        mChatMsgViewAdapter = new ChatMsgViewAdapter(this,mDataArrays);
+        mLvChat.setAdapter(mChatMsgViewAdapter);
+
+        mTvRec = (TextView) findViewById(R.id.textViewMsgRec);
+        mEtSend = (EditText) findViewById(R.id.editTextMsgSend);
+        mBtnSend = (Button) findViewById(R.id.buttonSend);
+        mBtnSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /**/
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        udphelper.send(mEtSend.getText().toString());
+                        //udphelper.send(" ");
+                    }
+                }).start();
+                ChatMsgEntity entity = new ChatMsgEntity();
+                entity.setDate(Calendar.getInstance().getTime());
+                entity.setMessageContent(mEtSend.getText().toString());
+                entity.setMsgType(false);
+                entity.setName("Me");
+                mDataArrays.add(entity);
+                mChatMsgViewAdapter.notifyDataSetChanged();
+
+
+                //udphelper.send(mEtSend.getText().toString());
+            }
+        });
+    }
     private void registerReceivers(){
         IntentFilter filter = new IntentFilter();
         filter.addAction(UdpHelper.ACTION_UDP_MSG_RECEIVE);
@@ -124,5 +148,12 @@ public class MainActivity extends AppCompatActivity {
         String str = new String(intent.getByteArrayExtra(UdpHelper.EXTRA_UDP_MSG_RECEIVE));
         str = str.trim();
         mTvRec.setText(str.toString());
+        ChatMsgEntity entity = new ChatMsgEntity();
+        entity.setDate(Calendar.getInstance().getTime());
+        entity.setMessageContent(str);
+        entity.setMsgType(true);
+        entity.setName("Server");
+        mDataArrays.add(entity);
+        mChatMsgViewAdapter.notifyDataSetChanged();
     }
 }
