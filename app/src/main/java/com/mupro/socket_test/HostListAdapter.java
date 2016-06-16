@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 
 import java.util.List;
@@ -13,7 +14,7 @@ import android.widget.TextView;
 /**
  * Created by Administrator on 2016/6/16.
  */
-public class HostListAdapter extends BaseAdapter {
+public class HostListAdapter extends BaseAdapter{
     private final static String TAG = "HostListAdapter";
     private List<HostObject> mList;
     private Context mContext;
@@ -67,6 +68,7 @@ public class HostListAdapter extends BaseAdapter {
         holder.tvHostAddress.setText(host.getHostAddress().toString());
         return convertView;
     }
+
 
     static class ViewHolder {
         public TextView tvHostName;

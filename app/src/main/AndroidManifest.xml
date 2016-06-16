@@ -23,7 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ScanActivity"></activity>
+        <activity android:name=".ScanActivity"
+            android:label="Scan host"
+            android:theme="@android:style/Theme.Holo.Dialog">
+
+        </activity>
     </application>
 
 </manifest>

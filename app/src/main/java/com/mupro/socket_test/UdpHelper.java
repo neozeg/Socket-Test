@@ -28,9 +28,13 @@ public class UdpHelper implements Runnable{
     public  final static  String EXTRA_REMOTE_DEVICE_NAME = "extra.remote_device_name";
     public  final static  int MSG_UDP_MSG_RECEIVE = 1;
 
-    private static final String SERVER_IP = "192.168.191.1";
+    //private static final String SERVER_IP = "192.168.191.1";
     public    Boolean IsThreadDisable = false;//指示监听线程是否终止
     private static WifiManager.MulticastLock lock;
+
+    private String localIP = "127.0.0.1";
+    private static String hostIP;
+
     InetAddress mInetAddress;
 
     private Context mContext;
@@ -45,6 +49,12 @@ public class UdpHelper implements Runnable{
     public UdpHelper(WifiManager manager,Context context) {
         this.lock= manager.createMulticastLock("UDPwifi");
         mContext = context;
+        localIP = NetTool.getLocAddress();
+        hostIP = NetTool.getLocAddress();
+    }
+
+    public void setHostIp(String ip){
+        hostIP = ip;
     }
 
     public void UdpProcessing(){
@@ -107,8 +117,9 @@ public class UdpHelper implements Runnable{
             e.printStackTrace();
         }
         InetAddress local = null;
+        final String ip = hostIP;
         try {
-            local = InetAddress.getByName(SERVER_IP);
+            local = InetAddress.getByName(hostIP);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }

@@ -92,10 +92,24 @@ public class MainActivity extends Activity {
             return true;
         }else if(id == R.id.action_scan){
             Intent intent = new Intent(MainActivity.this,ScanActivity.class);
-            startActivity(intent);
+            //startActivity(intent);
+            startActivityForResult(intent,NetTool.REQUEST_SCAN_HOST);
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode != Activity.RESULT_OK)
+            return;
+        switch (requestCode){
+            case NetTool.REQUEST_SCAN_HOST:
+                Log.v(TAG,"host :" + data.getStringExtra(NetTool.EXTRA_HOST_IP));
+                udphelper.setHostIp(data.getStringExtra(NetTool.EXTRA_HOST_IP));
+                break;
+        }
     }
 
     private void setupViewComponents(){

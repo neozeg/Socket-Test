@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 
@@ -31,7 +32,8 @@ public class ScanActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan);
-        registerReceivers();
+        setResult(Activity.RESULT_CANCELED);
+
         netTool = new NetTool(getApplicationContext());
         setupViewComponents();
         netTool.scanHost();
@@ -39,8 +41,14 @@ public class ScanActivity extends Activity {
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onResume() {
+        super.onResume();
+        registerReceivers();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
         unregisterReceivers();
     }
 
@@ -50,13 +58,19 @@ public class ScanActivity extends Activity {
         mHostListAdapter = new HostListAdapter(getApplicationContext(),mHostList);
         mLvHosts.setAdapter(mHostListAdapter);
         mHostListAdapter.notifyDataSetChanged();
-
-        mBtnScan = (Button) findViewById(R.id.buttonScan);
-        mBtnScan.setOnClickListener(new View.OnClickListener() {
+        mLvHosts.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onClick(View v) {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                HostObject host = mHostList.get(position);
+                Intent intent = new Intent();
+                intent.putExtra(NetTool.EXTRA_HOST_IP,host.getHostAddress());
+                setResult(Activity.RESULT_OK,intent);
+                finish();
             }
         });
+
+        //mBtnScan = (Button) findViewById(R.id.buttonScan);
+
     }
 
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {

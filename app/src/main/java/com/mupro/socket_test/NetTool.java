@@ -30,6 +30,7 @@ import java.util.Enumeration;
 public class NetTool {
     private final static String TAG = "NetTool";
 
+    public final static int REQUEST_SCAN_HOST = 111;
     public final static String ACTION_FOUND_HOST = "action.found.host";
     public final static String EXTRA_HOST_IP = "extra.host.ip";
 
@@ -188,7 +189,7 @@ public class NetTool {
     }
 
 
-    public String getLocAddress(){
+    public static String getLocAddress(){
         String ipaddress = "";
         try{
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
