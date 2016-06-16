@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        udphelper.StopListen();
         unregisterReceivers();
     }
 
@@ -114,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                 entity.setDate(Calendar.getInstance().getTime());
                 entity.setMessageContent(mEtSend.getText().toString());
                 entity.setMsgType(false);
-                entity.setName("Me");
+                entity.setName(getLocDeviceNames().toString());
                 mDataArrays.add(entity);
                 mChatMsgViewAdapter.notifyDataSetChanged();
 
@@ -146,14 +148,19 @@ public class MainActivity extends AppCompatActivity {
     private void processUdpMsg(Intent intent){
         Log.i(TAG,intent.getAction());
         String str = new String(intent.getByteArrayExtra(UdpHelper.EXTRA_UDP_MSG_RECEIVE));
+        String remoteDeviceName = intent.getStringExtra(UdpHelper.EXTRA_REMOTE_DEVICE_NAME);
         str = str.trim();
         mTvRec.setText(str.toString());
         ChatMsgEntity entity = new ChatMsgEntity();
         entity.setDate(Calendar.getInstance().getTime());
         entity.setMessageContent(str);
         entity.setMsgType(true);
-        entity.setName("Server");
+        entity.setName(remoteDeviceName);
         mDataArrays.add(entity);
         mChatMsgViewAdapter.notifyDataSetChanged();
+    }
+
+    public String getLocDeviceNames(){
+        return Build.MODEL;
     }
 }

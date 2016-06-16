@@ -24,7 +24,8 @@ public class UdpHelper implements Runnable{
     private static final String TAG = "UdpHelper";
 
     public  final static  String ACTION_UDP_MSG_RECEIVE = "action.udp_msg_receive";
-    public  final static  String EXTRA_UDP_MSG_RECEIVE = "message.udp_msg_receive";
+    public  final static  String EXTRA_UDP_MSG_RECEIVE = "extra.udp_msg_receive";
+    public  final static  String EXTRA_REMOTE_DEVICE_NAME = "extra.remote_device_name";
     public  final static  int MSG_UDP_MSG_RECEIVE = 1;
 
     private static final String SERVER_IP = "192.168.191.1";
@@ -49,7 +50,10 @@ public class UdpHelper implements Runnable{
     public void UdpProcessing(){
 
     }
-
+    public void StopListen(){
+        IsThreadDisable = true;
+        if(lock.isHeld())lock.release();
+    }
     public void StartListen()  {
         // UDP服务器监听的端口
         Integer port = 6667;
@@ -64,7 +68,7 @@ public class UdpHelper implements Runnable{
             try {
                 while (!IsThreadDisable) {
                     // 准备接收数据
-                    Log.d(TAG, "准备接受");
+                   // Log.d(TAG, "准备接受");
                     this.lock.acquire();
 
                     datagramSocket.receive(datagramPacket);
@@ -75,12 +79,13 @@ public class UdpHelper implements Runnable{
                     byte[] bytes = new byte[datagramPacket.getLength()];
                     System.arraycopy(datagramPacket.getData(),0,bytes,0,bytes.length);
                     data.putByteArray(EXTRA_UDP_MSG_RECEIVE,bytes);
+                    String remoteName = datagramPacket.getAddress().getHostName();
+                    if(remoteName==null || remoteName=="")remoteName = datagramPacket.getAddress().getHostAddress().toString();
+                    data.putString(EXTRA_REMOTE_DEVICE_NAME,remoteName);
                     msg.setData(data);
                     msgHandler.sendMessage(msg);
-                    String strMsg=new String(datagramPacket.getData()).trim();
                     Log.d(TAG, datagramPacket.getAddress()
-                            .getHostAddress().toString()
-                            + ":" +strMsg );
+                            .getHostAddress().toString() );
                     this.lock.release();
                 }
             } catch (IOException e) {//IOException
@@ -94,7 +99,7 @@ public class UdpHelper implements Runnable{
         message = (message == null ? "Hello IdeasAndroid!" : message);
         int server_port = 6666;
         int client_port = 6668;
-        Log.d(TAG, "UDP发送数据:"+message);
+        //Log.d(TAG, "UDP发送数据:"+message);
         DatagramSocket s = null;
         try {
             s = new DatagramSocket(client_port);
@@ -129,17 +134,20 @@ public class UdpHelper implements Runnable{
         public void handleMessage(Message msg) {
             if(msg.what == MSG_UDP_MSG_RECEIVE){
                 byte[] data = msg.getData().getByteArray(EXTRA_UDP_MSG_RECEIVE);
-                broadcastUDPMsg(ACTION_UDP_MSG_RECEIVE,data);
+                String remoteDeviceName = msg.getData().getString(EXTRA_REMOTE_DEVICE_NAME);
+                broadcastUDPMsg(ACTION_UDP_MSG_RECEIVE,data,remoteDeviceName);
             }else{
                 super.handleMessage(msg);
             }
         }
     };
 
-    private void broadcastUDPMsg(final String action,byte[] data){
+    private void broadcastUDPMsg(final String action,byte[] data,String remoteDeviceName){
         Intent intent = new Intent();
         intent.setAction(action);
         intent.putExtra(EXTRA_UDP_MSG_RECEIVE,data);
+        //String remoteDeviceName = intent.getStringExtra(EXTRA_REMOTE_DEVICE_NAME);
+        intent.putExtra(EXTRA_REMOTE_DEVICE_NAME,remoteDeviceName);
         mContext.sendBroadcast(intent);
     }
 }
