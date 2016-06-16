@@ -1,19 +1,21 @@
 package com.mupro.socket_test;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.apache.http.conn.util.InetAddressUtils;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -27,11 +29,16 @@ import java.util.Enumeration;
  */
 public class NetTool {
     private final static String TAG = "NetTool";
+
+    public final static String ACTION_FOUND_HOST = "action.found.host";
+    public final static String EXTRA_HOST_IP = "extra.host.ip";
+
     private final static int SERVER_PORT = 8888;
     private String locAddress;//local IP
     private Runtime runtime = Runtime.getRuntime();//获取运行环境来执行ping
     private Process proc = null;
-    private String ping = "ping -c 1 -w 0.5 "; //-c 1为发送的次数，-w 为发送后等待相应的时间
+    //private String ping = "ping -c 1 -w 0.5 "; //-c 1为发送的次数，-w 为发送后等待相应的时间
+    private String ping = "ping -c 1 -w 0.5 "; //-n 1为发送的次数，-w 为发送后等待相应的时间
     private int j;//存放ip最后一位地址0-255
     private Context mContext;
 
@@ -44,6 +51,13 @@ public class NetTool {
         public void dispatchMessage(Message msg) {
             //super.dispatchMessage(msg);
             switch (msg.what){
+                case 111://ping successed
+                    String ip = msg.getData().getString(EXTRA_HOST_IP);
+                    Intent intent = new Intent();
+                    intent.setAction(ACTION_FOUND_HOST);
+                    intent.putExtra(EXTRA_HOST_IP,ip);
+                    mContext.sendBroadcast(intent);
+                    break;
                 case 222://server msg
                     break;
                 case 333://scan done
@@ -84,6 +98,52 @@ public class NetTool {
         }
         return res;
     }
+    public void scanHost(){
+        locAddress = getLocAddrIndex();
+        if(locAddress.equals("")){
+            Toast.makeText(mContext,"Scan failed, please check your wifi network", Toast.LENGTH_LONG).show();
+            return;
+        }
+        for(int i =0 ;i<256 ; i++){
+            j=i;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String p = NetTool.this.ping + locAddress + NetTool.this.j;
+                    String current_ip = locAddress +NetTool.this.j;
+                    //Log.i(TAG,p);
+                    try {
+                        proc = runtime.exec(p);
+                        int result = proc.waitFor();
+                        if(result == 0){
+                            Log.i(TAG,"Connect sucessfully:" + current_ip);
+                            //Message.obtain(handler,111).sendToTarget();
+                            Message msg = new Message();
+                            msg.what = 111;
+                            Bundle data = new Bundle();
+                            data.putString(EXTRA_HOST_IP,current_ip);
+                            msg.setData(data);
+                            handler.sendMessage(msg);
+                        }else{
+                            //Toast.makeText(mContext, "ping测试失败", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }finally {
+                        proc.destroy();
+                    }
+                }
+            }).start();
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
 
     public void scan(){
         locAddress = getLocAddrIndex();
@@ -102,7 +162,8 @@ public class NetTool {
                         proc = runtime.exec(p);
                         int result = proc.waitFor();
                         if(result == 0){
-                            System.out.println("Connect sucessfully" + current_ip);
+                            //Toast.makeText(mContext, "ping连接成功", Toast.LENGTH_SHORT).show();
+                            System.out.println("Connect sucessfully:" + current_ip);
                             String msg = sendMsg(current_ip,"scan"+getLocAddress()+" ( "+ Build.MODEL + " ) ");
                             if(msg != null){
                                 if(msg.contains("OK")){
@@ -111,7 +172,7 @@ public class NetTool {
                                 }
                             }
                         }else{
-
+                            //Toast.makeText(mContext, "ping测试失败", Toast.LENGTH_SHORT).show();
                         }
 
                     }catch (IOException e1){
@@ -136,7 +197,8 @@ public class NetTool {
                 Enumeration<InetAddress> address = networkInterface.getInetAddresses();
                 while (address.hasMoreElements()){
                     InetAddress ip = address.nextElement();
-                    if(!ip.isLoopbackAddress() && InetAddressUtils.isIPv4Address(ip.getHostAddress())){
+                    //if(!ip.isLoopbackAddress() && Inet4Address.class.isInstance(ip.getHostAddress()) && InetAddressUtils.isIPv4Address(ip.getHostAddress())){
+                    if(!ip.isLoopbackAddress() && isValidIp4Address(ip.getHostAddress())){
                         ipaddress = ip.getHostAddress();
                     }
                 }
@@ -156,5 +218,21 @@ public class NetTool {
             return  str.substring(0,str.lastIndexOf(".")+1);
         }
         return null;
+    }
+
+    public static boolean isValidIp4Address(final String hostName) {
+        try {
+            return Inet4Address.getByName(hostName) != null;
+        } catch (UnknownHostException ex) {
+            return false;
+        }
+    }
+
+    public static boolean isValidIp6Address(final String hostName) {
+        try {
+            return Inet6Address.getByName(hostName) != null;
+        } catch (UnknownHostException ex) {
+            return false;
+        }
     }
 }

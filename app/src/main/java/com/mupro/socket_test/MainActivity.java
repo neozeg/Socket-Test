@@ -1,5 +1,6 @@
 package com.mupro.socket_test;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -19,14 +20,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     private final static String TAG = "MainActivity";
 
     private UDPServer Server;
@@ -52,11 +55,11 @@ public class MainActivity extends AppCompatActivity {
         //udphelper = new UdpHelper(manager);
         //传递WifiManager对象，以便在UDPHelper类里面使用MulticastLock
         //udphelper.addObserver(MsgReceiveService.this);
-        //tReceived = new Thread(udphelper);
+        tReceived = new Thread(udphelper);
         //tReceived.start();
 
-        ExecutorService exec = Executors.newCachedThreadPool();
-        exec.execute(udphelper);
+        //ExecutorService exec = Executors.newCachedThreadPool();
+        //exec.execute(udphelper);
 
         registerReceivers();
         setupViewComponents();
@@ -87,6 +90,9 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }else if(id == R.id.action_scan){
+            Intent intent = new Intent(MainActivity.this,ScanActivity.class);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);
@@ -104,27 +110,58 @@ public class MainActivity extends AppCompatActivity {
         mBtnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /**/
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        udphelper.send(mEtSend.getText().toString());
-                        //udphelper.send(" ");
-                    }
-                }).start();
-                ChatMsgEntity entity = new ChatMsgEntity();
-                entity.setDate(Calendar.getInstance().getTime());
-                entity.setMessageContent(mEtSend.getText().toString());
-                entity.setMsgType(false);
-                entity.setName(getLocDeviceNames().toString());
-                mDataArrays.add(entity);
-                mChatMsgViewAdapter.notifyDataSetChanged();
-
-
-                //udphelper.send(mEtSend.getText().toString());
+                sendEtMsg();
+                //pingTest();
             }
         });
     }
+
+    private void sendEtMsg(){
+                /**/
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                udphelper.send(mEtSend.getText().toString());
+                //udphelper.send(" ");
+            }
+        }).start();
+        ChatMsgEntity entity = new ChatMsgEntity();
+        entity.setDate(Calendar.getInstance().getTime());
+        entity.setMessageContent(mEtSend.getText().toString());
+        entity.setMsgType(false);
+        entity.setName(getLocDeviceNames().toString());
+        mDataArrays.add(entity);
+        mChatMsgViewAdapter.notifyDataSetChanged();
+
+
+    }
+
+    private void pingTest(){
+        Runtime run = Runtime.getRuntime();
+        Process proc = null;
+        try {
+            String str = "ping -c 1 -i 0.2 -W 1 "+ "192.168.191.1";
+            String ping = "ping -c 1 -w 0.5 ";
+            //System.out.println(str);
+            proc = run.exec(ping + "192.168.191.1");
+            int result = proc.waitFor();
+            if(result == 0)
+            {
+                Toast.makeText(MainActivity.this, "ping连接成功", Toast.LENGTH_SHORT).show();
+            }
+            else
+            {
+                Toast.makeText(MainActivity.this, "ping测试失败", Toast.LENGTH_SHORT).show();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            proc.destroy();
+        }
+    }
+
     private void registerReceivers(){
         IntentFilter filter = new IntentFilter();
         filter.addAction(UdpHelper.ACTION_UDP_MSG_RECEIVE);
